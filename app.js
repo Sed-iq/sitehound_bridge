@@ -10,8 +10,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.post("/update", uploader);
 
-app.listen(
-  process.env.PORT,
+app.get("/",(req,res)=>{
+res.send("Running")
+})
+app.listen(80,
   console.log("Connector is running at", process.env.PORT)
 );
 function Caller() {

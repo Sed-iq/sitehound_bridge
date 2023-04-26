@@ -10,10 +10,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.post("/update", uploader);
 
-app.get("/",(req,res)=>{
-res.send("Running")
-})
-app.listen(80,
+app.get("/", (req, res) => {
+  res.send("Running");
+});
+app.listen(
+  process.env.PORT,
   console.log("Connector is running at", process.env.PORT)
 );
 function Caller() {
@@ -47,4 +48,4 @@ function Caller() {
 
 const interval = 60 * 200 * 5;
 // the caller function will run every 1 minute
- setInterval(Caller, interval);
+// setInterval(Caller, interval);

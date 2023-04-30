@@ -1,5 +1,5 @@
 const request = require("request-promise");
-
+const fs = require("fs");
 module.exports = async (req, res) => {
   const second = JSON.parse(req.body.second);
   const sitehound = second.map((data) => {
@@ -9,7 +9,12 @@ module.exports = async (req, res) => {
       body_html: data.description,
       product_type: null,
       price: data.value,
+      uid: data.uid,
+      barcode: data.barcode,
     };
+  });
+  fs.writeFile("sitehound.json", JSON.stringify(sitehound), (err) => {
+    console.log(err || "done");
   });
   const shopify = await getShopify();
   const matches = checkTitlesAndStore(sitehound, shopify).matchingItems;

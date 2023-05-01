@@ -58,6 +58,7 @@ try {
                     Body: sitehound[j].body_html,
                     Price: sitehound[j].price,
                     Quantity: remainder,
+                    To_status:"SOLD"
                   });
                   break;
                 }
@@ -89,6 +90,6 @@ try {
   console.log("No update");
 }
 // Caller();
-// const interval = 60 * 200 * 5;
+  const interval = 60 * 200 * 5;
 // the caller function will run every 1 minute
-// setInterval(Caller, interval);
+ setInterval(Caller, interval);

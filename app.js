@@ -58,7 +58,8 @@ try {
                     Body: sitehound[j].body_html,
                     Price: sitehound[j].price,
                     Quantity: remainder,
-                    To_status:"SOLD"
+                    To_status: "SOLD",
+                    Status: sitehound[j].status,
                   });
                   break;
                 }
@@ -66,30 +67,32 @@ try {
               }
             }
           }
-
-          const csv = json2csv.parse(depleted_product);
-          const params = {
-            Bucket: "updatepool",
-            Key: "products.csv",
-            Body: csv,
-            ContentType: "application/json",
-          };
-          S3.upload(params, (err, _data) => {
-            if (err) console.error(err);
-            else console.log("updated");
-          });
-        } else {
-          console.log("no update");
+          if (depleted_product != "") {
+            const csv = json2csv.parse(depleted_product);
+            const params = {
+              Bucket: "updatepool",
+              Key: "products.csv",
+              Body: csv,
+              ContentType: "application/json",
+            };
+            S3.upload(params, (err, _data) => {
+              if (err) console.error(err);
+              else console.log("updated");
+            });
+          } else {
+            console.log("no update");
+            console.log(depleted_product);
+          }
         }
       })
       .catch((err) => {
         console.log(err);
       });
   }
+  const interval = 60 * 200 * 5;
+  setInterval(Caller, interval);
 } catch (err) {
   console.log("No update");
 }
 // Caller();
-  const interval = 60 * 200 * 5;
 // the caller function will run every 1 minute
- setInterval(Caller, interval);

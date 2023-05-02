@@ -11,6 +11,7 @@ module.exports = async (req, res) => {
       price: data.value,
       uid: data.uid,
       barcode: data.barcode,
+      status: data.status || "ACTIVE",
     };
   });
   fs.writeFile("sitehound.json", JSON.stringify(sitehound), (err) => {
@@ -134,5 +135,5 @@ function saveNew(sitehound_data) {
     },
   })
     .then((d) => console.log("New product added"))
-    .catch((err) => console.log("Error"));
+    .catch((err) => console.log(err));
 }

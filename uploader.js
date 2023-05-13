@@ -2,7 +2,7 @@ const request = require("request-promise");
 const fs = require("fs");
 module.exports = async (req, res) => {
   const second = JSON.parse(req.body.second);
-  const sitehound = second.map((data) => {
+  const $ = second.map((data) => {
     return {
       title: data.item_number,
       quantity: data.quantity,
@@ -14,6 +14,7 @@ module.exports = async (req, res) => {
       status: data.status || "ACTIVE",
     };
   });
+  const sitehound = mergeItemsByTitle($);
   fs.writeFile("sitehound.json", JSON.stringify(sitehound), (err) => {
     console.log(err || "done");
   });
@@ -23,6 +24,19 @@ module.exports = async (req, res) => {
   matches.forEach((item) => update(item, item.id, res));
   if (noMatch.length > 0) noMatch.forEach((item) => saveNew(item));
 };
+function mergeItemsByTitle(items) {
+  const mergedItems = {};
+
+  for (const item of items) {
+    if (!mergedItems[item.title]) {
+      mergedItems[item.title] = { ...item };
+    } else {
+      mergedItems[item.title].quantity += item.quantity;
+    }
+  }
+
+  return Object.values(mergedItems);
+}
 function getShopify() {
   return new Promise((resolve, reject) => {
     request({
@@ -107,7 +121,6 @@ function checkTitlesAndStore(arr1, arr2) {
   }
   return { matchingItems, nonMatchingItems };
 }
-
 function saveNew(sitehound_data) {
   const new_product = {
     product: {

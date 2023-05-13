@@ -11,7 +11,47 @@ app.use(express.json());
 app.post("/update", uploader);
 
 app.get("/", (req, res) => {
-  res.send("Running");
+  res.send("Connector is Running");
+});
+app.get("/deplete/:id", (req, res) => {
+  request({
+    url: `https://executivesalvage.myshopify.com/admin/products/${req.params.id}.json`,
+    json: true,
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Access-Token": process.env.API_TOKEN,
+    },
+    body: {
+      product: {
+        variants: [
+          {
+            inventory_quantity: 6,
+          },
+        ],
+      },
+    },
+  }).then((d) => {
+    res.end();
+    console.log("editted");
+  });
+});
+app.post("/csv", (req, res) => {
+  fs.readFile("sitehound.json", (err, data) => {
+    if (err) {
+      console.log("No update");
+    } else {
+      try {
+        const sitehound = JSON.parse(data);
+        const interval = 60 * 200 * 5;
+        Caller(sitehound);
+        res.end();
+      } catch (err) {
+        console.error(err);
+      }
+      // setInterval(() => Caller(sitehound), interval);
+    }
+  });
 });
 app.listen(
   process.env.PORT,
@@ -21,9 +61,13 @@ fs.readFile("sitehound.json", (err, data) => {
   if (err) {
     console.log("No update");
   } else {
-    const sitehound = JSON.parse(data);
-    const interval = 60 * 200 * 5;
-    setInterval(() => Caller(sitehound), interval);
+    try {
+      const sitehound = JSON.parse(data);
+      const interval = 60 * 200 * 5;
+      setInterval(() => Caller(sitehound), interval);
+    } catch (err) {
+      throw err;
+    }
   }
 });
 
@@ -68,6 +112,7 @@ function Caller(sitehound) {
                   To_status: "SOLD",
                   Status: sitehound[j].status,
                 });
+                console.log(depleted_product);
                 break;
               }
               break;

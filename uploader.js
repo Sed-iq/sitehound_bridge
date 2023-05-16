@@ -10,11 +10,12 @@ module.exports = async (req, res) => {
       product_type: null,
       price: data.value,
       uid: data.uid,
+      location: data.location,
       barcode: data.barcode,
-      status: data.status || "ACTIVE",
+      status: data.status || null,
     };
   });
-  const sitehound = mergeItemsByTitle($);
+  const sitehound = $.filter((c) => c.quantity > 0);
   fs.writeFile("sitehound.json", JSON.stringify(sitehound), (err) => {
     console.log(err || "done");
   });
@@ -24,19 +25,19 @@ module.exports = async (req, res) => {
   matches.forEach((item) => update(item, item.id, res));
   if (noMatch.length > 0) noMatch.forEach((item) => saveNew(item));
 };
-function mergeItemsByTitle(items) {
-  const mergedItems = {};
+// function mergeItemsByTitle(items) {
+//   const mergedItems = {};
 
-  for (const item of items) {
-    if (!mergedItems[item.title]) {
-      mergedItems[item.title] = { ...item };
-    } else {
-      mergedItems[item.title].quantity += item.quantity;
-    }
-  }
+//   for (const item of items) {
+//     if (!mergedItems[item.title]) {
+//       mergedItems[item.title] = { ...item };
+//     } else {
+//       mergedItems[item.title].quantity += item.quantity;
+//     }
+//   }
 
-  return Object.values(mergedItems);
-}
+//   return Object.values(mergedItems);
+// }
 function getShopify() {
   return new Promise((resolve, reject) => {
     request({
@@ -122,31 +123,34 @@ function checkTitlesAndStore(arr1, arr2) {
   return { matchingItems, nonMatchingItems };
 }
 function saveNew(sitehound_data) {
-  const new_product = {
-    product: {
-      title: sitehound_data.title,
-      body_html: sitehound_data.body_html,
-      product_type: sitehound_data.product_type,
-      variants: [
-        {
-          inventory_quantity: sitehound_data.quantity,
-          inventory_management: "shopify",
-          price: sitehound_data.price,
-        },
-      ],
-    },
-  };
-
-  request({
-    method: "POST",
-    url: process.env.SHOP_NAME,
-    json: true,
-    body: new_product,
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": process.env.API_TOKEN,
-    },
-  })
-    .then((d) => console.log("New product added"))
-    .catch((err) => console.log(err));
+  if (sitehound_data.quantity == 0) {
+    return 0;
+  } else {
+    const new_product = {
+      product: {
+        title: sitehound_data.title,
+        body_html: sitehound_data.body_html,
+        product_type: sitehound_data.product_type,
+        variants: [
+          {
+            inventory_quantity: sitehound_data.quantity,
+            inventory_management: "shopify",
+            price: sitehound_data.price,
+          },
+        ],
+      },
+    };
+    request({
+      method: "POST",
+      url: process.env.SHOP_NAME,
+      json: true,
+      body: new_product,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Shopify-Access-Token": process.env.API_TOKEN,
+      },
+    })
+      .then((d) => console.log("New product added"))
+      .catch((err) => console.log(sitehound_data.title, "Error here"));
+  }
 }

@@ -26,7 +26,7 @@ app.get("/deplete/:id", (req, res) => {
       product: {
         variants: [
           {
-            inventory_quantity: 7,
+            inventory_quantity: 2,
           },
         ],
       },
@@ -36,23 +36,7 @@ app.get("/deplete/:id", (req, res) => {
     console.log("editted");
   });
 });
-app.post("/csv", (req, res) => {
-  fs.readFile("sitehound.json", (err, data) => {
-    if (err) {
-      console.log("No update");
-    } else {
-      try {
-        const sitehound = JSON.parse(data);
-        const interval = 60 * 200 * 5;
-        Caller(sitehound);
-        res.end();
-      } catch (err) {
-        console.error(err);
-      }
-      // setInterval(() => Caller(sitehound), interval);
-    }
-  });
-});
+
 app.listen(
   process.env.PORT,
   console.log("Connector is running at", process.env.PORT)
@@ -64,7 +48,7 @@ fs.readFile("sitehound.json", (err, data) => {
     try {
       const sitehound = JSON.parse(data);
       const interval = 60 * 200 * 5;
-      setInterval(() => Caller(sitehound), 2000);
+      setInterval(() => Caller(sitehound), interval);
     } catch (err) {
       throw err;
     }
@@ -87,7 +71,7 @@ function Caller(sitehound) {
         var depleted_product = [];
         var data = d.products.map((item) => {
           return {
-            Location: "SEATTLE HUB",
+            Location: item.location,
             Handle: item.handle,
             Title: item.title,
             Body: item.body_html,
@@ -112,7 +96,6 @@ function Caller(sitehound) {
                   To_status: "SOLD",
                   Status: sitehound[j].status,
                 });
-                console.log(depleted_product);
                 break;
               }
               break;
@@ -141,7 +124,3 @@ function Caller(sitehound) {
       console.log(err);
     });
 }
-// setInterval(Caller, interval);
-
-// Caller();
-// the caller function will run every 1 minute

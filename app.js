@@ -26,7 +26,7 @@ app.get("/deplete/:id", (req, res) => {
       product: {
         variants: [
           {
-            inventory_quantity: 6,
+            inventory_quantity: 7,
           },
         ],
       },
@@ -64,7 +64,7 @@ fs.readFile("sitehound.json", (err, data) => {
     try {
       const sitehound = JSON.parse(data);
       const interval = 60 * 200 * 5;
-      setInterval(() => Caller(sitehound), interval);
+      setInterval(() => Caller(sitehound), 2000);
     } catch (err) {
       throw err;
     }

@@ -11,6 +11,7 @@ app.use(express.json());
 app.post("/update", uploader);
 
 app.get("/", (req, res) => {
+
   res.send("Connector is Running");
 });
 app.get("/deplete/:id", (req, res) => {
@@ -36,7 +37,12 @@ app.get("/deplete/:id", (req, res) => {
     console.log("editted");
   });
 });
-
+app.get("/csv", (req,res)=>{
+	res.send("csv generated")
+	fs.readFile("sitehound.json", (err, data)=>{
+	Caller(JSON.parse(data))
+})
+})
 app.listen(
   process.env.PORT,
   console.log("Connector is running at", process.env.PORT)
@@ -48,7 +54,7 @@ fs.readFile("sitehound.json", (err, data) => {
     try {
       const sitehound = JSON.parse(data);
       const interval = 60 * 200 * 5;
-      setInterval(() => Caller(sitehound), interval);
+      setInterval(() => Caller(sitehound, interval))
     } catch (err) {
       throw err;
     }

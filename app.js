@@ -11,7 +11,6 @@ app.use(express.json());
 app.post("/update", uploader);
 
 app.get("/", (req, res) => {
-
   res.send("Connector is Running");
 });
 app.get("/deplete/:id", (req, res) => {
@@ -37,12 +36,12 @@ app.get("/deplete/:id", (req, res) => {
     console.log("editted");
   });
 });
-app.get("/csv", (req,res)=>{
-	res.send("csv generated")
-	fs.readFile("sitehound.json", (err, data)=>{
-	Caller(JSON.parse(data))
-})
-})
+app.get("/csv", (req, res) => {
+  res.send("csv generated");
+  fs.readFile("sitehound.json", (err, data) => {
+    Caller(JSON.parse(data));
+  });
+});
 app.listen(
   process.env.PORT,
   console.log("Connector is running at", process.env.PORT)
@@ -54,7 +53,10 @@ fs.readFile("sitehound.json", (err, data) => {
     try {
       const sitehound = JSON.parse(data);
       const interval = 60 * 200 * 5;
-      setInterval(() => {Caller(sitehound)}, 4000)
+
+      // setInterval(() => {
+      //   Caller(sitehound);
+      // }, 4000);
     } catch (err) {
       throw err;
     }
@@ -93,7 +95,9 @@ function Caller(sitehound) {
             if (sitehound[j].title == data[i].Title) {
               const remainder = sitehound[j].quantity - data[i].Quantity;
               if (remainder > 0) {
-console.log(`${data[i].Quantity},${data[i].Title}\n, ${sitehound[j].quantity}, ${sitehound[j].title} `)
+                console.log(
+                  `${data[i].Quantity},${data[i].Title}\n, ${sitehound[j].quantity}, ${sitehound[j].title} `
+                );
                 depleted_product.push({
                   Location: "SEATTLE HUB",
                   Title: sitehound[j].title,
@@ -119,7 +123,10 @@ console.log(`${data[i].Quantity},${data[i].Title}\n, ${sitehound[j].quantity}, $
           };
           S3.upload(params, (err, _data) => {
             if (err) console.error(err);
-            else depleted_product = []
+            else {
+              updateArchive(sitehound, depleted_product);
+              depleted_product = [];
+            }
           });
         } else {
           console.log("no update");
@@ -130,4 +137,31 @@ console.log(`${data[i].Quantity},${data[i].Title}\n, ${sitehound[j].quantity}, $
     .catch((err) => {
       console.log(err);
     });
+}
+function updateArchive(data, depleted_product) {
+  const new_archive = [];
+  for (let i = 0; i < data.length; i++) {
+    for (let j = 0; j < depleted_product.length; j++) {
+      if (depleted_product[j].Title === data[i].title) {
+        new_archive.push({
+          title: data[i].title,
+          quantity: data[i].quantity - depleted_product[j].Quantity,
+          body_html: data[i].body_html,
+          product_type: data[i].product_type,
+          price: data[i].price,
+          uid: data[i].uid,
+          location: data[i].location,
+          barcode: data[i].barcode,
+          status: data[i].status,
+        });
+        break;
+      } else {
+        new_archive.push(data[i]);
+        break;
+      }
+    }
+  }
+  fs.writeFile("sitehound.json", JSON.stringify(new_archive), (err) => {
+    console.log("Archive updated");
+  });
 }

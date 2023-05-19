@@ -16,13 +16,14 @@ module.exports = async (req, res) => {
     };
   });
   const sitehound = $.filter((c) => c.quantity > 0);
-  fs.writeFile("sitehound.json", JSON.stringify(sitehound), (err) => {
+//	console.log($)
+  fs.writeFile("sitehound.json", JSON.stringify($), (err) => {
     console.log(err || "done");
   });
   const shopify = await getShopify();
   const matches = checkTitlesAndStore(sitehound, shopify).matchingItems;
   const noMatch = checkTitlesAndStore(sitehound, shopify).nonMatchingItems;
-  matches.forEach((item) => update(item, item.id, res));
+	if(matches.length > 0) matches.forEach((item) => update(item, item.id, res));
   if (noMatch.length > 0) noMatch.forEach((item) => saveNew(item));
 };
 // function mergeItemsByTitle(items) {

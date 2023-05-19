@@ -27,7 +27,7 @@ app.get("/deplete/:id", (req, res) => {
       product: {
         variants: [
           {
-            inventory_quantity: 2,
+            inventory_quantity: 7,
           },
         ],
       },
@@ -54,7 +54,7 @@ fs.readFile("sitehound.json", (err, data) => {
     try {
       const sitehound = JSON.parse(data);
       const interval = 60 * 200 * 5;
-      setInterval(() => Caller(sitehound, interval))
+      setInterval(() => {Caller(sitehound)}, 4000)
     } catch (err) {
       throw err;
     }
@@ -93,6 +93,7 @@ function Caller(sitehound) {
             if (sitehound[j].title == data[i].Title) {
               const remainder = sitehound[j].quantity - data[i].Quantity;
               if (remainder > 0) {
+console.log(`${data[i].Quantity},${data[i].Title}\n, ${sitehound[j].quantity}, ${sitehound[j].title} `)
                 depleted_product.push({
                   Location: "SEATTLE HUB",
                   Title: sitehound[j].title,
@@ -118,7 +119,7 @@ function Caller(sitehound) {
           };
           S3.upload(params, (err, _data) => {
             if (err) console.error(err);
-            else console.log("updated");
+            else depleted_product = []
           });
         } else {
           console.log("no update");

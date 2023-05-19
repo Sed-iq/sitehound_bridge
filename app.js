@@ -54,9 +54,9 @@ fs.readFile("sitehound.json", (err, data) => {
       const sitehound = JSON.parse(data);
       const interval = 60 * 200 * 5;
 
-      // setInterval(() => {
-      //   Caller(sitehound);
-      // }, 4000);
+      setInterval(() => {
+        Caller(sitehound);
+      }, interval);
     } catch (err) {
       throw err;
     }

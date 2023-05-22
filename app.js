@@ -5,7 +5,8 @@ const dotenv = require("dotenv").config(),
   uploader = require("./uploader"),
   express = require("express"),
   app = express(),
-  json2csv = require("json2csv");
+  json2csv = require("json2csv"),
+  csv2json = require("csvtojson");
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.post("/update", uploader);
@@ -14,32 +15,9 @@ app.get("/", (req, res) => {
   res.send("Connector is Running");
 });
 
-app.get("/status", (req,res)=>{
+app.get("/status", (req, res) => {
   fs.readFile("sitehound.json", (err, data) => {
-    res.json(JSON.parse(data))
-  });
-})
-app.get("/deplete/:id", (req, res) => {
-  request({
-    url: `https://executivesalvage.myshopify.com/admin/products/${req.params.id}.json`,
-    json: true,
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Access-Token": process.env.API_TOKEN,
-    },
-    body: {
-      product: {
-        variants: [
-          {
-            inventory_quantity: 7,
-          },
-        ],
-      },
-    },
-  }).then((d) => {
-    res.end();
-    console.log("editted");
+    res.json(JSON.parse(data));
   });
 });
 app.get("/csv", (req, res) => {
@@ -52,22 +30,14 @@ app.listen(
   process.env.PORT,
   console.log("Connector is running at", process.env.PORT)
 );
-fs.readFile("sitehound.json", (err, data) => {
-  if (err) {
-    console.log("No update");
-  } else {
-    try {
-      const sitehound = JSON.parse(data);
-      const interval = 60 * 200 * 5;
-
-      setInterval(() => {
-        Caller(sitehound);
-      }, 3000);
-    } catch (err) {
-      throw err;
-    }
+setInterval(async () => {
+  try {
+    const sitehound = await getArchive();
+    Caller(sitehound);
+  } catch (error) {
+    console.error(error);
   }
-});
+}, 3000);
 
 function Caller(sitehound) {
   // Calles the product.json of the shopify api
@@ -105,7 +75,7 @@ function Caller(sitehound) {
                   `${data[i].Quantity},${data[i].Title}\n, ${sitehound[j].quantity}, ${sitehound[j].title} `
                 );
                 depleted_product.push({
-                  Location: "SEATTLE HUB",
+                  Location: sitehound[j].location,
                   Title: sitehound[j].title,
                   Body: sitehound[j].body_html,
                   Price: sitehound[j].price,
@@ -127,18 +97,19 @@ function Caller(sitehound) {
             Body: csv,
             ContentType: "application/json",
           };
-          S3.upload(params, (err, _data) => {
-            if (err) console.error(err);
-            else {
+
+          uploadToS3(params, depleted_product)
+            .then(() => {
               updateArchive(sitehound, depleted_product);
-              depleted_product = [];
-            }
-          });
+            })
+            .catch((err) => {
+              console.log(err);
+            });
         } else {
           console.log("no update");
           console.log(depleted_product);
         }
-      }
+      } else console.log("data invalid");
     })
     .catch((err) => {
       console.log(err);
@@ -160,6 +131,7 @@ function updateArchive(data, depleted_product) {
           barcode: data[i].barcode,
           status: data[i].status,
         });
+        console.log("match");
         break;
       } else {
         new_archive.push(data[i]);
@@ -169,5 +141,52 @@ function updateArchive(data, depleted_product) {
   }
   fs.writeFile("sitehound.json", JSON.stringify(new_archive), (err) => {
     console.log("Archive updated");
+  });
+}
+function getArchive() {
+  return new Promise((resolve, reject) => {
+    fs.readFile("sitehound.json", (err, data) => {
+      if (err) reject(err);
+      else {
+        const readAble = JSON.parse(data);
+        resolve(readAble);
+      }
+    });
+  });
+}
+async function uploadToS3(uploadData, putData) {
+  // putdata is the data to be added on to it.
+  return new Promise(async (resolve, reject) => {
+    try {
+      const filedata = await S3.getObject({
+        Bucket: "updatepool",
+        Key: "products.csv",
+      }).promise();
+      const products = filedata.Body.toString();
+      console.log(products);
+      csv2json()
+        .fromString(products)
+        .then(async (json) => {
+          putData.map((item) => {
+            json.push(item);
+          });
+          const csv = json2csv.parse(json); // parsing back to csv
+          const params = {
+            Bucket: "updatepool",
+            Key: "products.csv",
+            Body: csv,
+          };
+          S3.putObject(params)
+            .promise()
+            .then(() => resolve(null))
+            .catch((err) => reject(err));
+        });
+    } catch (err) {
+      // Update normally
+      S3.upload(uploadData, (err, _data) => {
+        if (err) reject(err);
+        else resolve(null); // updated
+      });
+    }
   });
 }

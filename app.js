@@ -13,6 +13,12 @@ app.post("/update", uploader);
 app.get("/", (req, res) => {
   res.send("Connector is Running");
 });
+
+app.get("/status", (req,res)=>{
+  fs.readFile("sitehound.json", (err, data) => {
+    res.json(JSON.parse(data))
+  });
+})
 app.get("/deplete/:id", (req, res) => {
   request({
     url: `https://executivesalvage.myshopify.com/admin/products/${req.params.id}.json`,
@@ -56,7 +62,7 @@ fs.readFile("sitehound.json", (err, data) => {
 
       setInterval(() => {
         Caller(sitehound);
-      }, interval);
+      }, 3000);
     } catch (err) {
       throw err;
     }

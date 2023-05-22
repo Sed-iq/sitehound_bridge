@@ -21,6 +21,7 @@ app.get("/status", (req, res) => {
   });
 });
 app.get("/csv", (req, res) => {
+  // Generate csv on command
   res.send("csv generated");
   fs.readFile("sitehound.json", (err, data) => {
     Caller(JSON.parse(data));
@@ -30,6 +31,7 @@ app.listen(
   process.env.PORT,
   console.log("Connector is running at", process.env.PORT)
 );
+const interval = 200 * 5 * 60
 setInterval(async () => {
   try {
     const sitehound = await getArchive();
@@ -37,7 +39,7 @@ setInterval(async () => {
   } catch (error) {
     console.error(error);
   }
-}, 3000);
+}, interval);
 
 function Caller(sitehound) {
   // Calles the product.json of the shopify api
